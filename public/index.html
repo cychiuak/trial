@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shooting Aliens!</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <div id="container" class="col">
+        <div id="header" class="row">
+            <div id="title">Shooting Aliens
+            </div>
+
+            <div class="spacer-grow"></div>
+
+            <div id="user-panel" class="row">
+                <div class="field-content row shadow">
+                    <span class="user-name">-</span>
+                </div>
+                <button id="signout-button" class="icon"><span class="material-icons">logout</span></button>
+            </div>
+        </div>
+
+        <div id="main-panel" class="row">
+            <div id="chat-panel" class="col">
+                <div id="chat-area" class="col">Game instruction:</div>
+                <button id="start"></button>
+				<button type="button" onclick="window.location.href='projfinale.html'">Start Game</button>
+            </div>
+
+            <div id="online-users-panel" class="col">
+                <div id="online-users-area" class="col"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="signin-overlay" class="overlay row">
+        <div class="content shadow row">
+            <form id="signin-form" class="col">
+                <div class="caption">SIGN IN FOR OLD USERS</div>
+                <div class="spacer-0"></div>
+                <input id="signin-username" placeholder="Enter username"></input>
+                <input id="signin-password" type="password" placeholder="Enter password"></input>
+                <div class="spacer-0"></div>
+                <button type="submit">Sign In</button>
+                <div id="signin-message" class="warning center"></div>
+                <div class="spacer-grow"></div>
+            </form>
+
+            <div class="spacer-0"></div>
+
+            <form id="register-form" class="col">
+                <div class="caption">REGISTER FOR NEW USERS</div>
+                <div class="spacer-0"></div>
+                <input id="register-username" maxlength="10" placeholder="Enter your username"></input>
+                <input id="register-name" maxlength="16" placeholder="Enter your name"></input>
+                <input id="register-password" type="password" placeholder="Enter your password"></input>
+                <input id="register-confirm" type="password" placeholder="Enter your password again"></input>
+                <div class="spacer-0"></div>
+                <button type="submit">Register</button>
+                <div id="register-message" class="warning center"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.min.js"></script>
+    <script src="scripts/socket.js"></script>
+    <script src="scripts/ui.js"></script>
+    <script src="scripts/registration.js"></script>
+    <script src="scripts/authentication.js"></script>
+    <script src="scripts/experiment.js"></script>
+    <script src="user.js"></script>
+    <script>
+        /*let user = null;
+        let p1 = false;
+        let p2 = false;
+        let username;
+        let password;
+        const socket = io();
+        socket.emit("get user",(onlineuser) => {
+            let hi = JSON.parse(onlineuser);
+            console.log("get user socket is",hi);
+        });*/
+    </script>
+    <script>
+    $(document).ready(function() {
+        const socket = io();
+        // Initialize the UI
+        UI.initialize();
+        let user = null;
+        Authentication.validate(
+            () => {
+                SignInForm.hide();
+                UserPanel.update(Authentication.getUser());
+                UserPanel.show();
+                Socket.connect();
+                user = User(Authentication.getUser());
+                console.log(user);
+                console.log("user.getUser() is",user.getUser());
+                //myFunction(Authentication.getUser());
+
+            },
+            () => { SignInForm.show(); }
+        );
+        if(user){
+            console.log("user.getUser() is",user.getUser());}
+
+    });
+    </script>
+    <script>
+
+    </script>
+</body>
+</html>

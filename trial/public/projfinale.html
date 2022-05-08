@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comp4021</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Bangers" rel="stylesheet">
+	
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+    #game-container {
+        position: relative;
+		font-family: "Press Start 2P", sans-serif;
+    }
+    body {
+        font-family: "Press Start 2P", sans-serif;
+		overflow: auto;
+    }
+    #P1, #counter,  #game-over {
+        position: relative;
+    }
+    #P1, #game-over {
+        border: 1px solid gray;
+    }
+    #P1 {
+        background: url(background.jpg);
+        background-size: cover;
+    }
+    #rocket{ 
+        width: 54px;
+        height: 48px;
+    }
+    #pineapple{
+    
+    width: 54px;
+    height: 48px;
+	}
+    #P2{
+        border: 1px solid gray;
+        background: url(background.jpg);
+        background-size: cover;
+        position:relative;
+    }
+	#time-counter{
+		height:10%;
+		text-align: center;
+		font-size: 2.5em;
+	}
+	#scores {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#score text{
+		font-size: 130%;
+        fill: blue;
+	}
+	
+
+    </style>
+</head>
+<body>
+	<div id="time-counter">
+		<text>
+        TIME:<tspan id="time-remaining">120</tspan>
+        </text>
+	</div>
+	<div id="scores">
+		<svg width="980px" height="50px" xmlns="http://www.w3.org/2000/svg" id="score">
+				<text x="10" y="35">
+					P1(YOU) SCORE:<tspan color="red" id="player1-score">0</tspan>
+				</text>
+				<text x="510" y="35">
+					P2 SCORE:<tspan color="red" id="player2-score">0</tspan>
+				</text>
+		</svg>
+	</div>
+	<div id="game-status" style="text-align: center">
+		<canvas id="status" width="980px" height="60px"></canvas>      
+	</div>
+    <div id="game-container" style="text-align: center">
+        <canvas id = "P1" width="480px" height="600px"></canvas>
+        <canvas id = "P2" width="480px" height="600px"></canvas>
+    </div>
+    <script src="player.js"></script>
+    <script src="object.js"></script>
+    <script src="boundingbox.js"></script>
+	<script src="sprite.js"></script>
+	<script src="heart.js"></script>
+    <script>
+    $(document).ready(function() {
+        let cv = $('#P1').get(0);                                       let cv2 = $('#P2').get(0);
+        let context = cv.getContext("2d");                              let context2 = cv2.getContext("2d");
+        var gamearea = {x:0,y:0,width:480,height:600};
+        let player = Player(context,cv.width/2,cv.height-50,gamearea);  let player2 = Player(context2,cv.width/2,cv.height-50,gamearea);
+        let image = new Image();                                        let image2 = new Image();
+		
+		let cv3=$('#status').get(0);
+		const context3 = cv3.getContext("2d");
+		const P1Hearts=[
+			Heart(context3,20,20),
+			Heart(context3,80,20),
+			Heart(context3,140,20),
+		];
+		const P2Hearts=[
+			Heart(context3,520,20),
+			Heart(context3,580,20),
+			Heart(context3,640,20),
+		];
+		
+		
+		let player1_score=0;											let player2_score=0;
+		let player1_life=3;												let player2_life=3;	
+		
+        player.setImage("rocket.png");                                   player2.setImage("rocket.png");
+        player.setspeed(1000);                                           player2.setspeed(1000);
+        let bulletlist = [];                                              let bulletlist2 = [];
+        let numbullets = 0;                                               let numbullets2 = 0;
+        let ufolist = [];                                                  let ufolist2 = [];
+        let numufo = 0;                                                     let numufo2 = 0;
+        let ycor = 0;                                                       let ycor2 = 0;
+        const totalGameTime = 120;   // Total game time in seconds
+		let Startgame=0;
+        let currenttime = 0;      // The timestamp when the game starts  
+        let newufo = null;                                                  let newufo2 = null;
+        let ufo_ycor = 0;                                                   let ufo2_ycor = 0;
+        let ufo_xcor = 0;                                                   let ufo2_xcor = 0;
+        let bullet_width = 10;  
+        let bullet_height = 40; 
+		
+		const sounds = {
+            background: new Audio("battle.wav"),
+			finish:new Audio("finish.wav"),
+			shoot: new Audio("shoot.wav"),
+			die: new Audio("Aliendie.wav")
+        };
+
+        
+    function doFrame(now) {
+        //context.drawImage($("#rocket").get(0),425,480,50,50);
+		
+        context.clearRect(0, 0, cv.width, cv.height);
+        context2.clearRect(0,0,cv2.width,cv2.height);
+		context3.clearRect(0,0,cv3.width,cv3.height);
+        if(currenttime == 0){
+            currenttime = now;
+        }
+		if(Startgame == 0){
+            Startgame = now;
+        }
+		sounds.background.play();
+		sounds.background.loop=true;
+		
+		const gameTimeSoFar= now-Startgame;
+		const TimeRemaining= Math.ceil((totalGameTime*1000-gameTimeSoFar)/1000);
+		$("#time-remaining").text(TimeRemaining);
+        if(now-currenttime> (Math.floor(Math.random() * 3)*1000)+1000){          //creating an alien image every 1-4 second
+            newufo = Player(context,Math.floor(Math.random() * (cv.width-50)),0,gamearea);           newufo2 = Player(context2,Math.floor(Math.random() * (cv.width-50)),0,gamearea);
+            newufo.setImage("alien.png");                                                            newufo2.setImage("alien.png");
+            newufo.setspeed(100);                                                                    newufo2.setspeed(100);
+            numufo = numufo + 1;                                                                      numufo2 = numufo2 + 1;
+            ufolist.push(newufo);                                                                     ufolist2.push(newufo2);
+            currenttime = 0;
+        }
+		
+		//checking gameover
+		if(player1_life<=0){
+			context.font= "60px Bangers";
+			context.fillStyle = "red";
+			context.fillText("Game Over!", 120, 300);
+		}
+		if(player2_life<=0){
+			context2.font= "60px Bangers";
+			context2.fillStyle = "red";
+			context2.fillText("Game Over!", 120, 300);
+		}
+		if(player1_life<=0&&player2_life<=0||TimeRemaining<=0){
+			sounds.background.pause();
+			sounds.finish.play();
+			return;
+		}
+		
+
+        for(let k=0;k<numufo&&player1_life>0;k++){                      //for moving the list aliens of P1
+            ufo_ycor = ufolist[k].getY();
+            ufo_xcor = ufolist[k].getX();
+            if(ufo_ycor > cv.height - 50 ){
+                //game-over
+                player1_life=player1_life-1;
+                ufolist.splice(k,1); 
+                numufo = numufo - 1;
+                continue;                               //added this line
+            }
+            ufolist[k].move(4);                         //move the alien image downwards
+            ufolist[k].draw();                          //draw the alien image
+            for(let j = 0;j<numbullets;j++){
+                if(bulletlist.length > 0){              //prevent accessing empty string
+                bullet_top = bulletlist[j].gettop();
+                bullet_left = bulletlist[j].getleft();
+                bullet_right = bulletlist[j].getright();}
+                if(ufolist[k]){                         //prevent accessing undefined items
+                ufo_bottom = ufolist[k].getbottom();
+                ufo_left = ufolist[k].getleft();
+                ufo_right = ufolist[k].getright();}
+
+                if(bullet_top < ufo_bottom && ufo_left<bullet_right && ufo_right> bullet_left){
+                    //check whether the bullets and ufo collide
+                    ufolist.splice(k,1);        //remove position k from the array, ufolist
+                    bulletlist.splice(j,1);     //remove position j from the array, bulletlist
+                    numufo = numufo - 1;
+                    numbullets = numbullets - 1;
+					player1_score=player1_score+10;
+					sounds.die.currentTime = 0;
+					sounds.die.play();
+					$("#player1-score").text(player1_score);
+
+                }
+
+
+            }
+        }
+        for(let k=0;k<numufo2&&player2_life>0;k++){                     //for moving the list aliens of P1
+            ufo2_ycor = ufolist2[k].getY();
+            ufo2_xcor = ufolist2[k].getX();
+            if(ufo2_ycor > cv2.height - 50 ){
+                ufolist2.splice(k,1); 
+                player2_life=player2_life-1;
+                numufo2 = numufo2 - 1;
+                continue;                               //added this line
+            }
+            ufolist2[k].move(4);                        //move the alien downwards
+            ufolist2[k].draw();                         //move the alien downwards
+            for(let j = 0;j<numbullets2;j++){
+                if(bulletlist2.length > 0){             //prevent accessing empty string
+                bullet2_top = bulletlist2[j].gettop();
+                bullet2_left = bulletlist2[j].getleft();
+                bullet2_right = bulletlist2[j].getright();}
+                if(ufolist2[k]){                        //prevent accessing undefined items
+                ufo2_bottom = ufolist2[k].getbottom();
+                ufo2_left = ufolist2[k].getleft();
+                ufo2_right = ufolist2[k].getright();}
+                if(bullet2_top < ufo2_bottom && ufo2_left<bullet2_right && ufo2_right> bullet2_left){
+                    //check whether the bullets and ufo collide
+                    ufolist2.splice(k,1);        //remove position k from the array, ufolist2
+                    bulletlist2.splice(j,1);    //remove position j from the array, bulletlist2
+                    numufo2 = numufo2 - 1;
+                    numbullets2 = numbullets2 - 1;
+					player2_score=player2_score+10;
+					sounds.die.currentTime = 0;
+					sounds.die.play();
+					$("#player2-score").text(player2_score);
+
+
+                }
+
+
+            }
+        }
+        for(let i=0;i<numbullets&&player1_life>0;i++){          //for moving the list of bullet which stays on screen
+            ycor = bulletlist[i].getY();
+            if(ycor < 0 ){                      //remove bullet from the list after bullet gets out of bound
+                bulletlist.splice(i,1);
+                numbullets = numbullets - 1;
+                continue;
+            }
+            bulletlist[i].move(2);              //move the bullets
+            bulletlist[i].draw();
+
+        }
+        for(let i=0;i<numbullets2&&player2_life>0;i++){         //for the bullets on screen left
+            ycor = bulletlist2[i].getY();
+            if(ycor < 0 ){
+                console.log(ycor);
+                bulletlist2.splice(i,1);
+                numbullets2 = numbullets2 - 1;
+                continue;
+            }
+            bulletlist2[i].move(2);
+            bulletlist2[i].draw();
+
+        }
+		
+		for(var i=0;i<player1_life;i++){
+			P1Hearts[i].update(now);
+		}
+		for(var i=0;i<player2_life;i++){
+			P2Hearts[i].update(now);
+		}
+		
+		if(player2_life>0)
+			player2.draw();                         //draw the player 2 each frame
+		if(player1_life>0)	
+        player.draw();                          //draw player 1 each frame
+		for(var i=0;i<player1_life;i++){
+			P1Hearts[i].draw();
+		}
+		for(var i=0;i<player2_life;i++){
+			P2Hearts[i].draw();
+		}
+       requestAnimationFrame(doFrame);
+    }
+    $(document).on("keydown", function(event) {
+
+        if(event.keyCode == 37 &&player1_life>0){                //press left arrow for moving left
+            
+            if(player.getX() >= 0 ){
+            player.move(1);}
+
+        }
+        if(event.keyCode == 65&&player2_life>0){                //press A for moving left
+            
+            if(player2.getX() >= 0 ){
+            player2.move(1);}
+
+        }
+
+        if(event.keyCode == 39&&player1_life>0){                   //right arrow
+            
+            if(player.getX() <= cv.width-60 ){
+            player.move(3);}
+
+        }
+        if(event.keyCode == 68&&player2_life>0){                    //press D
+            
+            if(player2.getX() <= cv2.width-60 ){
+            player2.move(3);}
+            console.log("hi");
+            
+            
+        }
+        if(event.keyCode == 32&&player1_life>0){                    //spacebar for shooting
+            let newbullet = Player(context,player.getX(),player.getY()+10,gamearea);
+            newbullet.setImage("bullet.png");
+            numbullets = numbullets + 1;
+            bulletlist.push(newbullet);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+            console.log("hi");
+        }
+
+        if(event.keyCode == 87&&player2_life>0){                    //press w for shooting
+
+            console.log("hi");
+            let newbullet2 = Player(context2,player2.getX(),player2.getY()+10,gamearea);
+            newbullet2.setImage("bullet.png");
+            numbullets2 = numbullets2 + 1;
+            bulletlist2.push(newbullet2);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+            console.log(bulletlist2);
+        }
+
+        /* TODO */
+        /* Handle the key down */
+        });
+        requestAnimationFrame(doFrame);
+    });
+
+    </script>
+</body>
+</html>

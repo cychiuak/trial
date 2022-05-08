@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comp4021</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Bangers" rel="stylesheet">
+	
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+    #game-container {
+        position: relative;
+		font-family: "Press Start 2P", sans-serif;
+    }
+    body {
+        font-family: "Press Start 2P", sans-serif;
+		overflow: auto;
+    }
+    #P1, #counter,  #game-over {
+        position: relative;
+    }
+    #P1, #game-over {
+        border: 1px solid gray;
+    }
+    #P1 {
+        background: url(background.jpg);
+        background-size: cover;
+    }
+    #rocket{ 
+        width: 54px;
+        height: 48px;
+    }
+    #pineapple{
+    
+    width: 54px;
+    height: 48px;
+	}
+    #P2{
+        border: 1px solid gray;
+        background: url(background.jpg);
+        background-size: cover;
+        position:relative;
+    }
+	#time-counter{
+		height:10%;
+		text-align: center;
+		font-size: 2.5em;
+	}
+	#scores {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#score text{
+		font-size: 130%;
+        fill: blue;
+	}
+    #buttonp1{
+        position: absolute;
+    }
+    #buttonp2{
+        position: absolute;
+        margin-left: 150px;
+    }
+	
+
+    </style>
+</head>
+<body>
+    <form id="signin-form" class="col">
+        <div class="caption">SIGN IN FOR OLD USERS</div>
+        <div class="spacer-0"></div>
+        <input id="signin-username" placeholder="Enter username"></input>
+        <input id="signin-password" type="password" placeholder="Enter password"></input>
+        <div class="spacer-0"></div>
+        <button type="submit">Sign In</button>
+        <div id="signin-message" class="warning center"></div>
+        <div class="spacer-grow"></div>
+    </form>
+    <button id = "buttonp1">Ready</button>        //using one for ready button another one may need delete
+    <button id = "buttonp2" onclick="P2()">Player 2</button>
+    <div id = "game-content" >
+        <div id="time-counter">
+            <text>
+            TIME:<tspan id="time-remaining">120</tspan>
+            </text>
+        </div>
+        <div id="scores">
+            <svg width="980px" height="50px" xmlns="http://www.w3.org/2000/svg" id="score">
+                    <text id = "position1" x="10" y="35">
+                        P1 SCORE:<tspan color="red" id="player1-score">0</tspan>
+                    </text>
+                    <text id="position2" x="510" y="35">
+                        P2 SCORE:<tspan color="red" id="player2-score">0</tspan>
+                    </text>
+            </svg>
+        </div>
+        <div id="game-status" style="text-align: center">
+            <canvas id="status" width="980px" height="60px"></canvas>
+        </div>
+        <div id="game-container" style="text-align: center">
+            <canvas id = "P1" width="480px" height="600px"></canvas>
+            <canvas id = "P2" width="480px" height="600px"></canvas>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.min.js"></script>
+    <script src="player.js"></script>
+    <script src="object.js"></script>
+    <script src="boundingbox.js"></script>
+	<script src="sprite.js"></script>
+    <script src="heart.js"></script>
+    <script src="gameUI.js"></script>
+    <script>
+    $(document).ready(function() {
+        let user1;
+        let user2;      //using for player2's name
+        let p1occupied = false;
+        let p2occupied = false;
+        let username;
+        let password;
+        let curuser;
+        let opponentid;
+        let p1orp2;
+        let UFOx = -1;
+        const socket = io();
+        socket.emit("signinuser");
+        socket.on("curuser", (reqsessionuser) => {
+            username = JSON.parse(reqsessionuser);
+            console.log("enter projfinale with username %s", username);
+        });
+        socket.on("getposition",(position)=>{
+            if(position == "1"){
+                p1orp2 = 1;
+                document.getElementById("position1").innerHTML = "P1(you)";
+            }
+            if(position == "2"){
+                p1orp2 = 2;
+                document.getElementById("position2").innerHTML = "P2(you)";
+            }
+        });
+        socket.on("returnopponent",(data)=>{
+                user2 = data;
+                console.log("entering returnoppo with opponent name %s",user2);
+                requestAnimationFrame(doFrame);
+            });
+
+        socket.on("hi",(userid)=>{
+            console.log(userid);
+
+
+        });
+        if(opponentid){
+            socket.emit("sendhi",opponentid);
+        }
+        socket.on("user1",(onlineuser) => {
+            let hi = JSON.parse(onlineuser);
+            p1occupied = true;
+            document.querySelector('#buttonp2').disabled = true;
+            document.querySelector('#buttonp1').disabled = true;
+            console.log("get user socket is",hi);
+            user1 = hi;
+            if(p2occupied == true && p1occupied == true){
+                requestAnimationFrame(doFrame);
+            }
+
+
+        });
+        socket.on("user2",(onlineuser) => {
+            let hi = JSON.parse(onlineuser);
+            p2occupied =  true;
+            document.querySelector('#buttonp2').disabled = true;
+            document.querySelector('#buttonp1').disabled = true;
+            console.log("get user socket is",hi);
+            user2 = hi;
+            if(p2occupied == true && p1occupied == true){
+                requestAnimationFrame(doFrame);
+            }
+
+        });
+
+        function getReady(){
+            // p1 = true;
+            // socket.emit("setplayer1",JSON.stringify(username));
+            socket.emit("getopponent",username);
+            document.querySelector('#buttonp1').disabled = true;
+            //todo add a word to tell user he is ready
+        }
+        /*socket.on("user1 button", (button)=>{
+            console.log("button from user 1 is",button);
+            nextbutton = button;
+        });*/
+        socket.on("opponent_gone", () => {
+            if(!alert("you opponent has gone, click OK to reload the page")){
+                window.location.reload();
+            }
+        });
+
+        $("#buttonp1").on("click", getReady);
+
+        $("#signin-form").on("submit", (e) => {
+            // Do not submit the form
+            e.preventDefault();
+
+            // Get the input fields
+            username = $("#signin-username").val().trim();
+            password = $("#signin-password").val().trim();
+            console.log("username is ",username);
+
+            // Send a signin request
+
+        });
+
+        let cv = $('#P1').get(0);                                       let cv2 = $('#P2').get(0);
+        let context = cv.getContext("2d");                              let context2 = cv2.getContext("2d");
+        var gamearea = {x:0,y:0,width:480,height:600};
+        let player = Player(context,cv.width/2,cv.height-50,gamearea);  let player2 = Player(context2,cv.width/2,cv.height-50,gamearea);
+        let image = new Image();                                        let image2 = new Image();
+        let nextbutton1;                                                let nextbutton2;
+        socket.on("p1button",(button) => {
+            let hi = button;
+            nextbutton1 = button;
+            var string2 = "leftarrow";
+            //alert(typeof nextbutton1);
+            console.log(nextbutton1,button);
+
+            console.log("the next button of p1 is ",nextbutton1);
+
+        });
+        socket.on("p2button",(button) => {
+            let hi = button;
+            nextbutton2 = button;
+            console.log("the next button of p2 is ",nextbutton2);
+
+        });
+        socket.on("UFOx",(x)=>{
+            //console.log("");
+            UFOx = JSON.parse(x);
+            UFOx = parseInt(x,10);
+        });
+        //receive and create alien object
+		let cv3=$('#status').get(0);
+		const context3 = cv3.getContext("2d");
+		const P1Hearts=[
+			Heart(context3,20,20),
+			Heart(context3,80,20),
+			Heart(context3,140,20),
+		];
+		const P2Hearts=[
+			Heart(context3,520,20),
+			Heart(context3,580,20),
+			Heart(context3,640,20),
+		];
+		
+		
+		let player1_score=0;											let player2_score=0;
+		let player1_life=3;												let player2_life=3;	
+		
+        player.setImage("rocket.png");                                   player2.setImage("rocket.png");
+        player.setspeed(1000);                                           player2.setspeed(1000);
+        let bulletlist = [];                                              let bulletlist2 = [];
+        let numbullets = 0;                                               let numbullets2 = 0;
+        let ufolist = [];                                                  let ufolist2 = [];
+        let numufo = 0;                                                     let numufo2 = 0;
+        let ycor = 0;                                                       let ycor2 = 0;
+        const totalGameTime = 120;   // Total game time in seconds
+		let Startgame=0;
+        let currenttime = 0;      // The timestamp when the game starts  
+        let newufo = null;                                                  let newufo2 = null;
+        let ufo_ycor = 0;                                                   let ufo2_ycor = 0;
+        let ufo_xcor = 0;                                                   let ufo2_xcor = 0;
+        let bullet_width = 10;  
+        let bullet_height = 40; 
+		
+		const sounds = {
+            background: new Audio("battle.wav"),
+			finish:new Audio("finish.wav"),
+			shoot: new Audio("shoot.wav"),
+			die: new Audio("Aliendie.wav")
+        };
+        function doFrame(now) {
+        //context.drawImage($("#rocket").get(0),425,480,50,50);
+		
+        context.clearRect(0, 0, cv.width, cv.height);
+        context2.clearRect(0,0,cv2.width,cv2.height);
+		context3.clearRect(0,0,cv3.width,cv3.height);
+        if(currenttime == 0){
+            currenttime = now;
+        }
+		if(Startgame == 0){
+            Startgame = now;
+        }
+		sounds.background.play();
+		sounds.background.loop=true;
+		
+		const gameTimeSoFar= now-Startgame;
+		const TimeRemaining= Math.ceil((totalGameTime*1000-gameTimeSoFar)/1000);
+		$("#time-remaining").text(TimeRemaining);
+        if(now-currenttime> (Math.floor(Math.random() * 3)*1000)+1000){          //creating an alien image every 1-4 second
+            //request x location from server
+
+            socket.emit("requestUFO",JSON.stringify(cv.width-50));
+            currenttime = 0;
+            console.log("UFOx is ",UFOx);
+        }
+        if(UFOx >= 0){
+            console.log("UFOx is called",UFOx);
+            newufo = Player(context,UFOx,0,gamearea);           newufo2 = Player(context2,UFOx,0,gamearea);
+            newufo.setImage("alien.png");                                                            newufo2.setImage("alien.png");
+            newufo.setspeed(10);                                                                    newufo2.setspeed(10);
+            numufo = numufo + 1;                                                                      numufo2 = numufo2 + 1;
+            ufolist.push(newufo);                                                                     ufolist2.push(newufo2);
+            UFOx = -1;
+        }
+        //player 1 move
+        if(player.getX() >= 0 &&   nextbutton1 && nextbutton1=="leftarrow"){
+            nextbutton1 = "";
+            console.log("hi");
+            player.move(1);
+            console.log("player.getX() is ",player.getX());
+        }
+
+        if(player.getX() <= cv.width-60 && nextbutton1 && nextbutton1 == "rightarrow" ){
+            nextbutton1 = "";
+            player.move(3);
+        }
+        //player2 move
+        if(player2.getX() >= 0 &&   nextbutton2 && nextbutton2=="a"){
+            nextbutton2 = "";
+            player2.move(1);
+        }
+        if(player2.getX() >= 0 &&   nextbutton2 && nextbutton2=="d"){
+            nextbutton2 = "";
+            player2.move(3);
+        }
+        if(nextbutton1 && nextbutton1=="spacebar"){
+            nextbutton1 = "";
+            let newbullet = Player(context,player.getX(),player.getY()+10,gamearea);
+            newbullet.setImage("bullet.png");
+            numbullets = numbullets + 1;
+            bulletlist.push(newbullet);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+        }
+        if(nextbutton2 && nextbutton2 == "w"){
+            nextbutton2 = "";
+            let newbullet2 = Player(context2,player2.getX(),player2.getY()+10,gamearea);
+            newbullet2.setImage("bullet.png");
+            numbullets2 = numbullets2 + 1;
+            bulletlist2.push(newbullet2);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+            console.log(bulletlist2);
+        }
+		//checking gameover
+		if(player1_life<=0){
+			context.font= "60px Bangers";
+			context.fillStyle = "red";
+            context.fillText("Game Over!", 120, 300);
+            
+		}
+		if(player2_life<=0){
+			context2.font= "60px Bangers";
+			context2.fillStyle = "red";
+			context2.fillText("Game Over!", 120, 300);
+		}
+		if(player1_life<=0&&player2_life<=0||TimeRemaining<=0){
+			sounds.background.pause();
+			sounds.finish.play();
+			return;
+		}
+		
+
+        for(let k=0;k<numufo&&player1_life>0;k++){                      //for moving the list aliens of P1
+            ufo_ycor = ufolist[k].getY();
+            ufo_xcor = ufolist[k].getX();
+            if(ufo_ycor > cv.height - 50 ){
+                //game-over
+                player1_life=player1_life-1;
+                ufolist.splice(k,1); 
+                numufo = numufo - 1;
+                continue;                               //added this line
+            }
+            ufolist[k].move(4);                         //move the alien image downwards
+            ufolist[k].draw();                          //draw the alien image
+            for(let j = 0;j<numbullets;j++){
+                if(bulletlist.length > 0){              //prevent accessing empty string
+                bullet_top = bulletlist[j].gettop();
+                bullet_left = bulletlist[j].getleft();
+                bullet_right = bulletlist[j].getright();}
+                if(ufolist[k]){                         //prevent accessing undefined items
+                ufo_bottom = ufolist[k].getbottom();
+                ufo_left = ufolist[k].getleft();
+                ufo_right = ufolist[k].getright();}
+
+                if(bullet_top < ufo_bottom && ufo_left<bullet_right && ufo_right> bullet_left){
+                    //check whether the bullets and ufo collide
+                    ufolist.splice(k,1);        //remove position k from the array, ufolist
+                    bulletlist.splice(j,1);     //remove position j from the array, bulletlist
+                    numufo = numufo - 1;
+                    numbullets = numbullets - 1;
+					player1_score=player1_score+10;
+					sounds.die.currentTime = 0;
+					sounds.die.play();
+					$("#player1-score").text(player1_score);
+
+                }
+
+
+            }
+        }
+        for(let k=0;k<numufo2&&player2_life>0;k++){                     //for moving the list aliens of P1
+            ufo2_ycor = ufolist2[k].getY();
+            ufo2_xcor = ufolist2[k].getX();
+            if(ufo2_ycor > cv2.height - 50 ){
+                ufolist2.splice(k,1); 
+                player2_life=player2_life-1;
+                numufo2 = numufo2 - 1;
+                continue;                               //added this line
+            }
+            ufolist2[k].move(4);                        //move the alien downwards
+            ufolist2[k].draw();                         //move the alien downwards
+            for(let j = 0;j<numbullets2;j++){
+                if(bulletlist2.length > 0){             //prevent accessing empty string
+                bullet2_top = bulletlist2[j].gettop();
+                bullet2_left = bulletlist2[j].getleft();
+                bullet2_right = bulletlist2[j].getright();}
+                if(ufolist2[k]){                        //prevent accessing undefined items
+                ufo2_bottom = ufolist2[k].getbottom();
+                ufo2_left = ufolist2[k].getleft();
+                ufo2_right = ufolist2[k].getright();}
+                if(bullet2_top < ufo2_bottom && ufo2_left<bullet2_right && ufo2_right> bullet2_left){
+                    //check whether the bullets and ufo collide
+                    ufolist2.splice(k,1);        //remove position k from the array, ufolist2
+                    bulletlist2.splice(j,1);    //remove position j from the array, bulletlist2
+                    numufo2 = numufo2 - 1;
+                    numbullets2 = numbullets2 - 1;
+					player2_score=player2_score+10;
+					sounds.die.currentTime = 0;
+					sounds.die.play();
+					$("#player2-score").text(player2_score);
+
+
+                }
+
+
+            }
+        }
+        for(let i=0;i<numbullets&&player1_life>0;i++){          //for moving the list of bullet which stays on screen
+            ycor = bulletlist[i].getY();
+            if(ycor < 0 ){                      //remove bullet from the list after bullet gets out of bound
+                bulletlist.splice(i,1);
+                numbullets = numbullets - 1;
+                continue;
+            }
+            bulletlist[i].move(2);              //move the bullets
+            bulletlist[i].draw();
+
+        }
+        for(let i=0;i<numbullets2&&player2_life>0;i++){         //for the bullets on screen left
+            ycor = bulletlist2[i].getY();
+            if(ycor < 0 ){
+                console.log(ycor);
+                bulletlist2.splice(i,1);
+                numbullets2 = numbullets2 - 1;
+                continue;
+            }
+            bulletlist2[i].move(2);
+            bulletlist2[i].draw();
+
+        }
+		
+		for(var i=0;i<player1_life;i++){
+			P1Hearts[i].update(now);
+		}
+		for(var i=0;i<player2_life;i++){
+			P2Hearts[i].update(now);
+		}
+		
+		if(player2_life>0)
+			player2.draw();                         //draw the player 2 each frame
+		if(player1_life>0)	
+        player.draw();                          //draw player 1 each frame
+		for(var i=0;i<player1_life;i++){
+			P1Hearts[i].draw();
+		}
+		for(var i=0;i<player2_life;i++){
+			P2Hearts[i].draw();
+        }
+        requestAnimationFrame(doFrame);
+    }
+    
+    $(document).on("keydown", function(event) {
+
+        if(event.keycode == 73){
+            console.log("username is ",username);
+            console.log("user1 is "),user1;
+            if(username.localeCompare(user1)){
+                let button = "i";
+                console.log(button);
+                socket.emit("user1 button",JSON.stringify(button));
+            }
+        }
+        if(event.keyCode == 37 &&player1_life>0 && p1orp2 == 1 ){                //press left arrow for moving left
+            console.log("username is ",username);
+            console.log("user1 is ",user1);
+                let button = "leftarrow";
+                console.log(button);
+                socket.emit("user1 button",button);
+            
+            /*if(username == user2){
+                let button = "leftarrow";
+                console.log(button);
+                socket.emit("user1 button",JSON.stringify(button));
+            }*/
+
+        }
+        if(event.keyCode == 65&&player2_life>0 && p1orp2 == 2){                //press A for moving left
+            
+            if(player2.getX() >= 0 ){
+                let button = "a";
+                console.log(button);
+                socket.emit("user2 button",button);
+            //player2.move(1);
+        }
+
+        }
+
+        if(event.keyCode == 39&&player1_life>0 && p1orp2 == 1){                   //right arrow
+            //console.log("keycode");
+            let button = "rightarrow";
+                console.log(button);
+                socket.emit("user1 button",button);
+            /*if(player.getX() <= cv.width-60 ){
+            player.move(3);}*/
+
+        }
+        if(event.keyCode == 68&&player2_life>0 && p1orp2 == 2){                    //press D
+            
+
+            if(player2.getX() <= cv2.width-60 ){
+                let button = "d";
+                console.log(button);
+                socket.emit("user2 button",button);
+            }
+            
+        }
+        if(event.keyCode == 32&&player1_life>0 && p1orp2 == 1){                    //spacebar for shooting
+            let button = "spacebar";
+                console.log(button);
+                socket.emit("user1 button",button);
+            /*let newbullet = Player(context,player.getX(),player.getY()+10,gamearea);
+            newbullet.setImage("bullet.png");
+            numbullets = numbullets + 1;
+            bulletlist.push(newbullet);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+            console.log("hi");*/
+        }
+
+        if(event.keyCode == 87&&player2_life>0 && p1orp2 == 2){                    //press w for shooting
+            let button = "w";
+                console.log(button);
+                socket.emit("user2 button",button);
+
+            /*console.log("hi");
+            let newbullet2 = Player(context2,player2.getX(),player2.getY()+10,gamearea);
+            newbullet2.setImage("bullet.png");
+            numbullets2 = numbullets2 + 1;
+            bulletlist2.push(newbullet2);
+			sounds.shoot.currentTime = 0;
+			sounds.shoot.play();
+            console.log(bulletlist2);*/
+        }
+
+        /* TODO */
+        /* Handle the key down */
+        });
+        //requestAnimationFrame(doFrame);
+    });
+
+    </script>
+</body>
+</html>

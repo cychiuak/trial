@@ -1,0 +1,53 @@
+{
+ "tony": {
+  "avatar": "Owl",
+  "name": "Tony Lee",
+  "password": "$2b$10$Yxb2fSgA5RFn9Oz9TxjLLuve/GiPXCs2DWVFhyFDr4qz39qglwp8e"
+ },
+ "may": {
+  "avatar": "Rabbit",
+  "name": "May Wong",
+  "password": "$2b$10$gLc3Ri9W6P650EKKbexw6uvirV8Bar7gmvAtMcoMiPiR3rsY50GVu"
+ },
+ "hoiying914": {
+  "username": "hoiying914",
+  "avatar": "Hamster",
+  "name": "Ariel",
+  "password": "$2b$10$HN07PuxJUTDEc4xhKR6x8e/1ZKJKvbr7j0t.T7Kvi5nYP3PmMzEGW"
+ },
+ "cychiuak": {
+  "username": "cychiuak",
+  "name": "123",
+  "password": "$2b$10$RvHxiVLOSRotwsW2KeJJv.TFGemrQVxKPI9R/MmpYbTKa8EeUD/oq"
+ },
+ "cychiual": {
+  "username": "cychiual",
+  "name": "123",
+  "password": "$2b$10$R1jFzkjpWsw3jbl69dCWheXQSy9tUk2S6XCRU2bVyyILrCCCWrw.W"
+ },
+ "cychiu": {
+  "username": "cychiu",
+  "name": "123",
+  "password": "$2b$10$ZZrqvQT5CL/AOE51AqVJfulgwUSrf0bzbZQyESL4WtKJCDKotlYRu"
+ },
+ "scwuaa": {
+  "username": "scwuaa",
+  "name": "wuto",
+  "password": "$2b$10$JFuXmwQPLU.cEBnZijRTue1.7yIF3P8ApNmp0NSjnGlXvSRjmz51K"
+ },
+ "scwuaaa": {
+  "username": "scwuaaa",
+  "name": "wutoo",
+  "password": "$2b$10$yGdD6zOfjoQoMTiW5OlTAOWqKmgwoPPhmS2hZzVHg.7dXmbkf2mbe"
+ },
+ "scwuaaaa": {
+  "username": "scwuaaaa",
+  "name": "wutooo",
+  "password": "$2b$10$LJ0JE6SXWegEdisaBHQKrukTwxPNjokgKeV1Hx3ay/pg/aB0uiU7W"
+ },
+ "cyc": {
+  "username": "cyc",
+  "name": "cyc",
+  "password": "$2b$10$b.4a.QO92TQUkMu5A2KkV.tT3fsBupVzfV/RHgbNPw0WomutyZ7lK"
+ }
+}
